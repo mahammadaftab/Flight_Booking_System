@@ -61,10 +61,10 @@ class JwtUtilsTest {
         // Arrange
         String username = "testuser";
         String token = Jwts.builder()
-                .subject(username)
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + expirationMs))
-                .signWith(secretKey)
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date((new Date()).getTime() + expirationMs))
+                .signWith(secretKey, SignatureAlgorithm.HS512)
                 .compact();
 
         // Act
@@ -79,10 +79,10 @@ class JwtUtilsTest {
         // Arrange
         String username = "testuser";
         String token = Jwts.builder()
-                .subject(username)
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + expirationMs))
-                .signWith(secretKey)
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date((new Date()).getTime() + expirationMs))
+                .signWith(secretKey, SignatureAlgorithm.HS512)
                 .compact();
 
         // Act
@@ -109,10 +109,10 @@ class JwtUtilsTest {
         // Arrange
         String username = "testuser";
         String expiredToken = Jwts.builder()
-                .subject(username)
-                .issuedAt(new Date(System.currentTimeMillis() - expirationMs - 1000))
-                .expiration(new Date(System.currentTimeMillis() - 1000))
-                .signWith(secretKey)
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis() - expirationMs - 1000))
+                .setExpiration(new Date(System.currentTimeMillis() - 1000))
+                .signWith(secretKey, SignatureAlgorithm.HS512)
                 .compact();
 
         // Act

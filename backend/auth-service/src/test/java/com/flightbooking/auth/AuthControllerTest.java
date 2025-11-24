@@ -70,11 +70,10 @@ public class AuthControllerTest {
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getId()).thenReturn(1L);
         when(userDetails.getEmail()).thenReturn("test@example.com");
-        when(userDetails.getAuthorities()).thenReturn(
+        when(userDetails.getAuthorities()).thenAnswer(invocation -> 
                 java.util.Collections.singletonList(
                         new org.springframework.security.core.authority.SimpleGrantedAuthority("USER")
-                )
-        );
+                ));
 
         // Act
         ResponseEntity<?> response = authController.authenticateUser(loginRequest);
@@ -83,7 +82,7 @@ public class AuthControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody() instanceof JwtResponse);
         JwtResponse jwtResponse = (JwtResponse) response.getBody();
-        assertEquals("jwt-token", jwtResponse.getToken());
+        assertEquals("jwt-token", jwtResponse.getAccessToken());
         assertEquals(1L, jwtResponse.getId());
         assertEquals("test@example.com", jwtResponse.getEmail());
     }

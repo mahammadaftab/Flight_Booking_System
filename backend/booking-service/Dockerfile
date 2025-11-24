@@ -1,13 +1,10 @@
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-alpine
 
 WORKDIR /app
 
-COPY pom.xml .
-COPY src ./src
-
-RUN apt-get update && apt-get install -y maven
-RUN mvn clean package -DskipTests
+# Copy the pre-built JAR file
+COPY target/booking-service-1.0.0.jar app.jar
 
 EXPOSE 8084
 
-ENTRYPOINT ["java", "-jar", "target/booking-service-1.0.0.jar"]
+ENTRYPOINT ["java", "-cp", "app.jar", "org.springframework.boot.loader.PropertiesLauncher"]

@@ -51,18 +51,16 @@ public class FlightControllerTest {
         flight1.setFlightNumber("FL001");
         flight1.setOrigin("JFK");
         flight1.setDestination("LAX");
-        flight1.setDepartureTime(LocalDateTime.now().plusDays(1));
-        flight1.setArrivalTime(LocalDateTime.now().plusDays(1).plusHours(6));
-        flight1.setPrice(299.99);
+        flight1.setDepartureUtc(LocalDateTime.now().plusDays(1));
+        flight1.setArrivalUtc(LocalDateTime.now().plusDays(1).plusHours(6));
 
         FlightDTO flight2 = new FlightDTO();
         flight2.setId(2L);
         flight2.setFlightNumber("FL002");
         flight2.setOrigin("LAX");
         flight2.setDestination("SFO");
-        flight2.setDepartureTime(LocalDateTime.now().plusDays(2));
-        flight2.setArrivalTime(LocalDateTime.now().plusDays(2).plusHours(1));
-        flight2.setPrice(199.99);
+        flight2.setDepartureUtc(LocalDateTime.now().plusDays(2));
+        flight2.setArrivalUtc(LocalDateTime.now().plusDays(2).plusHours(1));
 
         when(flightService.getAllFlights()).thenReturn(Arrays.asList(flight1, flight2));
 
@@ -86,9 +84,8 @@ public class FlightControllerTest {
         flight.setFlightNumber("FL001");
         flight.setOrigin("JFK");
         flight.setDestination("LAX");
-        flight.setDepartureTime(LocalDateTime.now().plusDays(1));
-        flight.setArrivalTime(LocalDateTime.now().plusDays(1).plusHours(6));
-        flight.setPrice(299.99);
+        flight.setDepartureUtc(LocalDateTime.now().plusDays(1));
+        flight.setArrivalUtc(LocalDateTime.now().plusDays(1).plusHours(6));
 
         when(flightService.getFlightById(1L)).thenReturn(Optional.of(flight));
 
@@ -125,9 +122,8 @@ public class FlightControllerTest {
         flight.setFlightNumber("FL001");
         flight.setOrigin("JFK");
         flight.setDestination("LAX");
-        flight.setDepartureTime(LocalDateTime.now().plusDays(1));
-        flight.setArrivalTime(LocalDateTime.now().plusDays(1).plusHours(6));
-        flight.setPrice(299.99);
+        flight.setDepartureUtc(LocalDateTime.now().plusDays(1));
+        flight.setArrivalUtc(LocalDateTime.now().plusDays(1).plusHours(6));
 
         when(flightService.createFlight(any(FlightDTO.class))).thenReturn(flight);
 
@@ -150,9 +146,8 @@ public class FlightControllerTest {
         flight.setFlightNumber("FL001");
         flight.setOrigin("JFK");
         flight.setDestination("LAX");
-        flight.setDepartureTime(LocalDateTime.now().plusDays(1));
-        flight.setArrivalTime(LocalDateTime.now().plusDays(1).plusHours(6));
-        flight.setPrice(299.99);
+        flight.setDepartureUtc(LocalDateTime.now().plusDays(1));
+        flight.setArrivalUtc(LocalDateTime.now().plusDays(1).plusHours(6));
 
         when(flightService.updateFlight(anyLong(), any(FlightDTO.class))).thenReturn(flight);
 
