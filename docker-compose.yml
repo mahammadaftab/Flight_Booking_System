@@ -1,0 +1,166 @@
+version: '3.8'
+
+services:
+  eureka-server:
+    build: ./backend/eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - flight-network
+    depends_on:
+      - postgres
+      - redis
+
+  api-gateway:
+    build: ./backend/api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    networks:
+      - flight-network
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_PROFILES_ACTIVE=docker
+
+  auth-service:
+    build: ./backend/auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - postgres
+    networks:
+      - flight-network
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/authdb
+      - SPRING_DATASOURCE_USERNAME=authuser
+      - SPRING_DATASOURCE_PASSWORD=authpass
+      - SPRING_PROFILES_ACTIVE=docker
+
+  flight-service:
+    build: ./backend/flight-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - postgres
+    networks:
+      - flight-network
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/flightdb
+      - SPRING_DATASOURCE_USERNAME=flightuser
+      - SPRING_DATASOURCE_PASSWORD=flightpass
+      - SPRING_PROFILES_ACTIVE=docker
+
+  seat-service:
+    build: ./backend/seat-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - postgres
+      - redis
+    networks:
+      - flight-network
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/seatdb
+      - SPRING_DATASOURCE_USERNAME=seatuser
+      - SPRING_DATASOURCE_PASSWORD=seatpass
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=docker
+
+  booking-service:
+    build: ./backend/booking-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-server
+      - postgres
+    networks:
+      - flight-network
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/bookingdb
+      - SPRING_DATASOURCE_USERNAME=bookinguser
+      - SPRING_DATASOURCE_PASSWORD=bookingpass
+      - SPRING_PROFILES_ACTIVE=docker
+
+  payment-service:
+    build: ./backend/payment-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      - eureka-server
+      - postgres
+    networks:
+      - flight-network
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/paymentdb
+      - SPRING_DATASOURCE_USERNAME=paymentuser
+      - SPRING_DATASOURCE_PASSWORD=paymentpass
+      - SPRING_PROFILES_ACTIVE=docker
+
+  currency-service:
+    build: ./backend/currency-service
+    ports:
+      - "8086:8086"
+    depends_on:
+      - eureka-server
+      - postgres
+    networks:
+      - flight-network
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/currencydb
+      - SPRING_DATASOURCE_USERNAME=currencyuser
+      - SPRING_DATASOURCE_PASSWORD=currencypass
+      - SPRING_PROFILES_ACTIVE=docker
+
+  postgres:
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    networks:
+      - flight-network
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=flightbooking
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+    networks:
+      - flight-network
+    volumes:
+      - redis_data:/data
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - flight-network
+    environment:
+      - NODE_ENV=development
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  flight-network:
+    driver: bridge
