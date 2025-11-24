@@ -18,5 +18,18 @@ export default defineConfig({
         secure: false
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      external: ['crypto'],
+      output: {
+        globals: {
+          crypto: 'crypto'
+        }
+      }
+    }
+  },
+  define: {
+    global: 'globalThis'
   }
 })

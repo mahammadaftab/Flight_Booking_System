@@ -11,9 +11,6 @@ COPY . .
 # Build the project
 RUN mvn clean package -DskipTests
 
-# Copy the JAR file to the root directory
-RUN cp target/api-gateway-1.0.0.jar app.jar
-
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "target/api-gateway.jar"]
