@@ -3,35 +3,32 @@ package com.flightbooking.gateway.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
 @Configuration
-@EnableMethodSecurity
+@EnableReactiveMethodSecurity
 public class WebSecurityConfig {
 
     @Autowired
     private JwtTokenFilter jwtTokenFilter;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/api/auth/**").permitAll()
-                                .requestMatchers("/actuator/**").permitAll()
-                                .anyRequest().authenticated()
-                )
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+    public SecurityWebFilterChain filterChain(ServerHttpSecurity http) {
+        http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+            .authorizeExchange(exchanges -> exchanges
+                .pathMatchers("/api/auth/**").permitAll()
+                .pathMatchers("/actuator/**").permitAll()
+                .anyExchange().authenticated())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .addFilterAt(jwtTokenFilter, SecurityWebFiltersOrder.AUTHENTICATION);
 
         return http.build();
     }

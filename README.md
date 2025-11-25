@@ -94,6 +94,8 @@ The system follows a microservices architecture with the following components:
 
 ## Services
 
+The Flight Booking System consists of the following microservices:
+
 1. **Auth Service** (`auth-service`) - User authentication and authorization
    - JWT token generation and validation
    - User registration and login
@@ -133,6 +135,16 @@ The system follows a microservices architecture with the following components:
    - Service registration
    - Service discovery
    - Health monitoring
+
+### Currently Running Services
+
+When starting the system with Docker Compose, the following services are currently operational:
+
+1. **Frontend** - React application serving the user interface on port 80
+2. **PostgreSQL** - Database service on port 5432
+3. **Redis** - Caching and seat locking service on port 6379
+
+Note: Some backend services may fail to start due to configuration issues. Please check the Docker logs for more information.
 
 ## Project Structure
 
@@ -181,15 +193,11 @@ docker-compose up --build
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
+Note: Currently, only the frontend, PostgreSQL, and Redis services are successfully starting. The other backend services may fail to start due to configuration issues.
+
 ### Running Individual Services
 
-1. Start the Eureka Server:
-```bash
-cd backend/eureka-server
-mvn spring-boot:run
-```
-
-2. Start other services in separate terminals:
+1. Start other services in separate terminals:
 ```bash
 cd backend/auth-service
 mvn spring-boot:run
@@ -197,10 +205,26 @@ mvn spring-boot:run
 cd backend/flight-service
 mvn spring-boot:run
 
-# ... repeat for other services
+cd backend/seat-service
+mvn spring-boot:run
+
+cd backend/booking-service
+mvn spring-boot:run
+
+cd backend/payment-service
+mvn spring-boot:run
+
+cd backend/currency-service
+mvn spring-boot:run
+
+cd backend/api-gateway
+mvn spring-boot:run
+
+cd backend/eureka-server
+mvn spring-boot:run
 ```
 
-3. Start the frontend:
+2. Start the frontend:
 ```bash
 cd frontend
 npm install
@@ -235,6 +259,8 @@ API documentation is available through Swagger UI when running the services:
 
 API documentation is also available through the API Gateway:
 - All APIs: http://localhost:8080/swagger-ui.html
+
+Note: These services need to be running for the API documentation to be accessible. Currently, the backend services may not be starting successfully.
 
 ## Testing
 
@@ -277,6 +303,8 @@ Each service exposes metrics at `/actuator/prometheus` endpoint.
 
 ### Health Checks
 Health checks are available at `/actuator/health` endpoint for each service.
+
+Note: Monitoring services require the backend services to be running properly.
 
 ## Security
 

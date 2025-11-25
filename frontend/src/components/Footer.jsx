@@ -39,7 +39,7 @@ const Footer = () => {
               <p className="mb-2">123 Travel Street</p>
               <p className="mb-2">Aviation City, AC 12345</p>
               <p className="mb-2">Email: support@flightbooking.com</p>
-              <p>Phone: +1 (555) 123-4567</p>
+              <p>Phone: +91 8970580082</p>
             </address>
           </div>
         </div>
