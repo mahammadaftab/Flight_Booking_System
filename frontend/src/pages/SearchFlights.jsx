@@ -1,132 +1,156 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
-import './SearchFlights.css'
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useFlights } from '../contexts/FlightContext';
 
 const SearchFlights = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { searchFlights, loading, error } = useFlights();
   
   const [searchData, setSearchData] = useState({
     from: '',
     to: '',
-    date: '',
-    adults: 1,
-    children: 0,
-    currency: 'USD'
-  })
-  
-  const [currencies] = useState(['USD', 'EUR', 'GBP', 'JPY', 'AUD'])
-  
+    date: ''
+  });
+
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setSearchData(prev => ({
-      ...prev,
-      [name]: name === 'adults' || name === 'children' ? parseInt(value) : value
-    }))
-  }
-  
+    setSearchData({
+      ...searchData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     
-    try {
-      // In a real application, we would call the flight service API here
-      // For now, we'll just navigate to the results page
-      navigate('/results', { state: searchData })
-    } catch (error) {
-      console.error('Error searching flights:', error)
+    if (!searchData.from || !searchData.to || !searchData.date) {
+      alert('Please fill in all fields');
+      return;
     }
-  }
-  
+    
+    const result = await searchFlights(searchData.from, searchData.to, searchData.date);
+    
+    if (result.success) {
+      navigate('/results');
+    } else {
+      alert(result.error || 'Failed to search flights');
+    }
+  };
+
   return (
-    <div className="search-flights">
-      <div className="container">
-        <h1>Search Flights</h1>
-        <form onSubmit={handleSubmit} className="search-form">
-          <div className="form-group">
-            <label htmlFor="from">From</label>
-            <input
-              type="text"
-              id="from"
-              name="from"
-              value={searchData.from}
-              onChange={handleChange}
-              placeholder="Airport code or city"
-              required
-            />
+    <div className="min-h-screen py-8">
+      <div className="container mx-auto px-4">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold text-center mb-8">Search Flights</h1>
+          
+          <div className="card p-6">
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label htmlFor="from" className="block text-gray-700 font-medium mb-2">
+                    From
+                  </label>
+                  <input
+                    type="text"
+                    id="from"
+                    name="from"
+                    value={searchData.from}
+                    onChange={handleChange}
+                    placeholder="Departure city or airport"
+                    className="form-input w-full"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="to" className="block text-gray-700 font-medium mb-2">
+                    To
+                  </label>
+                  <input
+                    type="text"
+                    id="to"
+                    name="to"
+                    value={searchData.to}
+                    onChange={handleChange}
+                    placeholder="Destination city or airport"
+                    className="form-input w-full"
+                    required
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label htmlFor="date" className="block text-gray-700 font-medium mb-2">
+                    Departure Date
+                  </label>
+                  <input
+                    type="date"
+                    id="date"
+                    name="date"
+                    value={searchData.date}
+                    onChange={handleChange}
+                    className="form-input w-full"
+                    required
+                  />
+                </div>
+              </div>
+              
+              {error && (
+                <div className="alert-error mb-6">
+                  {error}
+                </div>
+              )}
+              
+              <div className="text-center">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary w-full md:w-auto px-8 py-3"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <span className="loading-spinner mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                      Searching...
+                    </span>
+                  ) : (
+                    'Search Flights'
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
           
-          <div className="form-group">
-            <label htmlFor="to">To</label>
-            <input
-              type="text"
-              id="to"
-              name="to"
-              value={searchData.to}
-              onChange={handleChange}
-              placeholder="Airport code or city"
-              required
-            />
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4">Popular Destinations</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button 
+                onClick={() => setSearchData({...searchData, from: 'New York', to: 'London'})}
+                className="btn-outline text-center py-3"
+              >
+                New York → London
+              </button>
+              <button 
+                onClick={() => setSearchData({...searchData, from: 'Paris', to: 'Tokyo'})}
+                className="btn-outline text-center py-3"
+              >
+                Paris → Tokyo
+              </button>
+              <button 
+                onClick={() => setSearchData({...searchData, from: 'Sydney', to: 'Los Angeles'})}
+                className="btn-outline text-center py-3"
+              >
+                Sydney → LA
+              </button>
+              <button 
+                onClick={() => setSearchData({...searchData, from: 'Dubai', to: 'Singapore'})}
+                className="btn-outline text-center py-3"
+              >
+                Dubai → Singapore
+              </button>
+            </div>
           </div>
-          
-          <div className="form-group">
-            <label htmlFor="date">Departure Date</label>
-            <input
-              type="date"
-              id="date"
-              name="date"
-              value={searchData.date}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="adults">Adults</label>
-            <select
-              id="adults"
-              name="adults"
-              value={searchData.adults}
-              onChange={handleChange}
-            >
-              {[1, 2, 3, 4, 5, 6].map(num => (
-                <option key={num} value={num}>{num}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="children">Children</label>
-            <select
-              id="children"
-              name="children"
-              value={searchData.children}
-              onChange={handleChange}
-            >
-              {[0, 1, 2, 3, 4, 5].map(num => (
-                <option key={num} value={num}>{num}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="currency">Currency</label>
-            <select
-              id="currency"
-              name="currency"
-              value={searchData.currency}
-              onChange={handleChange}
-            >
-              {currencies.map(currency => (
-                <option key={currency} value={currency}>{currency}</option>
-              ))}
-            </select>
-          </div>
-          
-          <button type="submit" className="btn btn-primary">Search Flights</button>
-        </form>
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default SearchFlights
+export default SearchFlights;

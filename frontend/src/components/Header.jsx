@@ -1,55 +1,71 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import './Header.css'
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
-  const location = useLocation()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
-  
-  useEffect(() => {
-    // Check if user is logged in (in a real app, this would come from authentication context)
-    const token = localStorage.getItem('token')
-    setIsLoggedIn(!!token)
-    
-    // Check if user is admin (in a real app, this would come from user role)
-    // For now, we'll simulate this
-    setIsAdmin(true) // Simulate admin access for demo
-  }, [location])
-  
+  const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    setIsLoggedIn(false)
-    setIsAdmin(false)
-    window.location.href = '/'
-  }
-  
+    logout();
+    navigate('/');
+  };
+
   return (
-    <header className="header">
-      <div className="container">
-        <Link to="/" className="logo">
-          <h1>FlightBooking</h1>
-        </Link>
-        <nav className="nav">
-          <ul>
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/search">Search Flights</Link></li>
-            {isLoggedIn ? (
-              <>
-                {isAdmin && <li><Link to="/admin">Admin</Link></li>}
-                <li><button onClick={handleLogout} className="logout-btn">Logout</button></li>
-              </>
-            ) : (
-              <>
-                <li><Link to="/login">Login</Link></li>
-                <li><Link to="/register">Register</Link></li>
-              </>
+    <header className="bg-white shadow-md">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <Link to="/" className="text-2xl font-bold text-primary-600">
+              FlightBooking
+            </Link>
+          </div>
+
+          <nav className="hidden md:flex space-x-8">
+            <Link to="/" className="text-gray-600 hover:text-primary-600 transition-colors">
+              Home
+            </Link>
+            <Link to="/search" className="text-gray-600 hover:text-primary-600 transition-colors">
+              Search Flights
+            </Link>
+            {isAuthenticated && (
+              <Link to="/bookings" className="text-gray-600 hover:text-primary-600 transition-colors">
+                My Bookings
+              </Link>
             )}
-          </ul>
-        </nav>
+          </nav>
+
+          <div className="flex items-center space-x-4">
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                <span className="text-gray-700">Welcome, {user?.email}</span>
+                {user?.role === 'ADMIN' && (
+                  <Link to="/admin" className="btn-secondary text-sm">
+                    Admin Dashboard
+                  </Link>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="btn-primary text-sm"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex space-x-2">
+                <Link to="/login" className="btn-outline text-sm">
+                  Login
+                </Link>
+                <Link to="/register" className="btn-primary text-sm">
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

@@ -1,227 +1,288 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
-import SockJS from 'sockjs-client'
-import { Stomp } from '@stomp/stompjs'
-import './SeatSelection.css'
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useBooking } from '../contexts/BookingContext';
+import seatService from '../services/seatService';
 
 const SeatSelection = () => {
-  const { flightId } = useParams()
-  const navigate = useNavigate()
+  const { flightId } = useParams();
+  const navigate = useNavigate();
+  const { 
+    bookingData, 
+    setSelectedSeat, 
+    lockSeat, 
+    bookSeat 
+  } = useBooking();
   
-  const [seats, setSeats] = useState([])
-  const [selectedSeats, setSelectedSeats] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const stompClientRef = useRef(null)
-  
+  const [seats, setSeats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedSeatId, setSelectedSeatId] = useState(null);
+  const [processing, setProcessing] = useState(false);
+
   useEffect(() => {
-    const fetchSeats = async () => {
-      try {
-        setLoading(true)
-        // In a real application, we would call the seat service API here
-        // For now, we'll use mock data
-        const mockSeats = [
-          { id: 1, seatId: '1A', className: 'Economy', row: '1', column: 'A', status: 'AVAILABLE' },
-          { id: 2, seatId: '1B', className: 'Economy', row: '1', column: 'B', status: 'AVAILABLE' },
-          { id: 3, seatId: '1C', className: 'Economy', row: '1', column: 'C', status: 'AVAILABLE' },
-          { id: 4, seatId: '1D', className: 'Economy', row: '1', column: 'D', status: 'AVAILABLE' },
-          { id: 5, seatId: '1E', className: 'Economy', row: '1', column: 'E', status: 'AVAILABLE' },
-          { id: 6, seatId: '1F', className: 'Economy', row: '1', column: 'F', status: 'AVAILABLE' },
-          { id: 7, seatId: '2A', className: 'Economy', row: '2', column: 'A', status: 'AVAILABLE' },
-          { id: 8, seatId: '2B', className: 'Economy', row: '2', column: 'B', status: 'AVAILABLE' },
-          { id: 9, seatId: '2C', className: 'Economy', row: '2', column: 'C', status: 'AVAILABLE' },
-          { id: 10, seatId: '2D', className: 'Economy', row: '2', column: 'D', status: 'AVAILABLE' },
-          { id: 11, seatId: '2E', className: 'Economy', row: '2', column: 'E', status: 'AVAILABLE' },
-          { id: 12, seatId: '2F', className: 'Economy', row: '2', column: 'F', status: 'AVAILABLE' },
-          { id: 13, seatId: '3A', className: 'Business', row: '3', column: 'A', status: 'AVAILABLE' },
-          { id: 14, seatId: '3B', className: 'Business', row: '3', column: 'B', status: 'AVAILABLE' },
-          { id: 15, seatId: '3C', className: 'Business', row: '3', column: 'C', status: 'AVAILABLE' },
-          { id: 16, seatId: '3D', className: 'Business', row: '3', column: 'D', status: 'AVAILABLE' }
-        ]
-        
-        setSeats(mockSeats)
-        setLoading(false)
-      } catch (err) {
-        setError('Failed to fetch seats')
-        setLoading(false)
-      }
-    }
+    fetchSeats();
     
-    fetchSeats()
+    // Connect to WebSocket for real-time updates
+    seatService.connectToSeatUpdates(flightId, handleSeatUpdate);
     
-    // Connect to WebSocket for real-time seat updates
-    const connectWebSocket = () => {
-      const socket = new SockJS('http://localhost:8080/api/seats/ws-seats')
-      const client = Stomp.over(socket)
-      
-      client.connect({}, () => {
-        console.log('Connected to WebSocket')
-        
-        client.subscribe('/topic/seats', (message) => {
-          try {
-            const seatUpdate = JSON.parse(message.body)
-            console.log('Received seat update:', seatUpdate)
-            
-            setSeats(prevSeats => 
-              prevSeats.map(seat => 
-                seat.seatId === seatUpdate.seatId 
-                  ? { ...seat, status: seatUpdate.status } 
-                  : seat
-              )
-            )
-          } catch (err) {
-            console.error('Error processing seat update:', err)
-          }
-        })
-      }, (error) => {
-        console.error('WebSocket connection error:', error)
-      })
-      
-      stompClientRef.current = client
-    }
-    
-    connectWebSocket()
-    
+    // Cleanup on unmount
     return () => {
-      if (stompClientRef.current) {
-        stompClientRef.current.disconnect()
-      }
+      seatService.disconnect();
+    };
+  }, [flightId]);
+
+  const fetchSeats = async () => {
+    try {
+      const response = await seatService.getSeatsByFlightId(flightId);
+      setSeats(response.data);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message || 'Failed to load seats');
+      setLoading(false);
     }
-  }, [flightId])
-  
-  const handleSeatClick = (seat) => {
-    if (seat.status === 'AVAILABLE') {
-      // Send message to lock the seat via WebSocket
-      if (stompClientRef.current && stompClientRef.current.connected) {
-        const seatMessage = {
-          seatId: seat.seatId,
-          status: 'LOCKED',
-          flightId: parseInt(flightId)
+  };
+
+  const handleSeatUpdate = (seatUpdate) => {
+    // Update the seat status in real-time
+    setSeats(prevSeats => 
+      prevSeats.map(seat => 
+        seat.id === seatUpdate.id 
+          ? { ...seat, status: seatUpdate.status }
+          : seat
+      )
+    );
+  };
+
+  const handleSeatClick = async (seat) => {
+    // Don't allow selection of already booked or locked seats
+    if (seat.status === 'BOOKED' || seat.status === 'LOCKED') {
+      return;
+    }
+    
+    // If there's already a selected seat, unlock it first
+    if (selectedSeatId) {
+      const prevSeat = seats.find(s => s.id === selectedSeatId);
+      if (prevSeat && prevSeat.status === 'LOCKED') {
+        try {
+          await seatService.unlockSeat(flightId, prevSeat.seatId);
+        } catch (err) {
+          console.error('Failed to unlock previous seat:', err);
         }
-        
-        stompClientRef.current.send('/app/lockSeat', {}, JSON.stringify(seatMessage))
-        
-        // Update local state immediately for better UX
-        setSeats(prevSeats => 
-          prevSeats.map(s => 
-            s.seatId === seat.seatId 
-              ? { ...s, status: 'LOCKED' } 
-              : s
-          )
-        )
-        
-        setSelectedSeats(prev => [...prev, seat.seatId])
-      }
-    } else if (seat.status === 'LOCKED' && selectedSeats.includes(seat.seatId)) {
-      // Send message to unlock the seat via WebSocket
-      if (stompClientRef.current && stompClientRef.current.connected) {
-        const seatMessage = {
-          seatId: seat.seatId,
-          status: 'AVAILABLE',
-          flightId: parseInt(flightId)
-        }
-        
-        stompClientRef.current.send('/app/unlockSeat', {}, JSON.stringify(seatMessage))
-        
-        // Update local state immediately for better UX
-        setSeats(prevSeats => 
-          prevSeats.map(s => 
-            s.seatId === seat.seatId 
-              ? { ...s, status: 'AVAILABLE' } 
-              : s
-          )
-        )
-        
-        setSelectedSeats(prev => prev.filter(id => id !== seat.seatId))
       }
     }
-  }
-  
-  const handleConfirmBooking = () => {
-    if (selectedSeats.length > 0) {
-      // In a real application, we would call the booking service API here
-      navigate('/confirmation', { state: { flightId, selectedSeats } })
+    
+    // Lock the new seat
+    const result = await lockSeat(flightId, seat.seatId);
+    if (result.success) {
+      setSelectedSeatId(seat.id);
+      setSelectedSeat(seat);
+    } else {
+      alert(result.error || 'Failed to lock seat');
     }
-  }
-  
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!selectedSeatId) {
+      alert('Please select a seat first');
+      return;
+    }
+    
+    setProcessing(true);
+    
+    try {
+      const result = await bookSeat(flightId, bookingData.selectedSeat.seatId);
+      if (result.success) {
+        navigate('/booking/confirmation');
+      } else {
+        alert(result.error || 'Failed to book seat');
+      }
+    } catch (err) {
+      alert('Failed to confirm booking');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const getSeatClass = (seat) => {
+    let classes = "w-8 h-8 flex items-center justify-center rounded cursor-pointer border ";
+    
+    switch (seat.status) {
+      case 'AVAILABLE':
+        classes += selectedSeatId === seat.id 
+          ? "bg-primary-600 text-white border-primary-600" 
+          : "bg-white border-gray-300 hover:bg-gray-100";
+        break;
+      case 'LOCKED':
+        classes += "bg-yellow-500 text-white border-yellow-500 cursor-not-allowed";
+        break;
+      case 'BOOKED':
+        classes += "bg-red-500 text-white border-red-500 cursor-not-allowed";
+        break;
+      default:
+        classes += "bg-gray-200 border-gray-300 cursor-not-allowed";
+    }
+    
+    return classes;
+  };
+
   if (loading) {
     return (
-      <div className="seat-selection">
-        <div className="container">
-          <h1>Select Your Seats</h1>
-          <div className="loading">Loading seats...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading-spinner w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full mb-4"></div>
+          <p>Loading seats...</p>
         </div>
       </div>
-    )
+    );
   }
-  
+
   if (error) {
     return (
-      <div className="seat-selection">
-        <div className="container">
-          <h1>Select Your Seats</h1>
-          <div className="error">{error}</div>
+      <div className="min-h-screen py-8">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="alert-error">
+              <p>{error}</p>
+              <button 
+                onClick={fetchSeats}
+                className="btn-primary mt-4"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    )
+    );
   }
-  
+
+  // Group seats by row for display
+  const seatRows = {};
+  seats.forEach(seat => {
+    if (!seatRows[seat.row]) {
+      seatRows[seat.row] = [];
+    }
+    seatRows[seat.row].push(seat);
+  });
+
+  // Sort rows
+  const sortedRows = Object.keys(seatRows).sort();
+
   return (
-    <div className="seat-selection">
-      <div className="container">
-        <h1>Select Your Seats</h1>
-        <div className="seat-map">
-          <div className="seat-legend">
-            <div className="legend-item">
-              <div className="seat available"></div>
-              <span>Available</span>
-            </div>
-            <div className="legend-item">
-              <div className="seat locked"></div>
-              <span>Selected</span>
-            </div>
-            <div className="legend-item">
-              <div className="seat booked"></div>
-              <span>Booked</span>
+    <div className="min-h-screen py-8">
+      <div className="container mx-auto px-4">
+        <h1 className="text-3xl font-bold mb-8">Select Your Seat</h1>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <div className="card p-6">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold mb-4">Seat Map</h2>
+                
+                {/* Seat Legend */}
+                <div className="flex flex-wrap gap-4 mb-6">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-white border border-gray-300 mr-2"></div>
+                    <span className="text-sm">Available</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-primary-600 border border-primary-600 mr-2"></div>
+                    <span className="text-sm">Selected</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-yellow-500 border border-yellow-500 mr-2"></div>
+                    <span className="text-sm">Locked</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-red-500 border border-red-500 mr-2"></div>
+                    <span className="text-sm">Booked</span>
+                  </div>
+                </div>
+                
+                {/* Seat Map */}
+                <div className="overflow-x-auto">
+                  <div className="min-w-max">
+                    {sortedRows.map(row => (
+                      <div key={row} className="flex items-center mb-2">
+                        <div className="w-8 text-center font-medium mr-2">{row}</div>
+                        <div className="flex gap-1">
+                          {seatRows[row]
+                            .sort((a, b) => a.column.localeCompare(b.column))
+                            .map(seat => (
+                              <div
+                                key={seat.id}
+                                className={getSeatClass(seat)}
+                                onClick={() => handleSeatClick(seat)}
+                                title={`Seat ${seat.seatId} - $${seat.price}`}
+                              >
+                                {seat.column}
+                              </div>
+                            ))
+                          }
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           
-          <div className="seats-container">
-            {seats.map(seat => (
-              <div
-                key={seat.id}
-                className={`seat ${seat.status.toLowerCase()} ${selectedSeats.includes(seat.seatId) ? 'selected' : ''}`}
-                onClick={() => handleSeatClick(seat)}
-              >
-                {seat.seatId}
-              </div>
-            ))}
+          <div>
+            <div className="card p-6 sticky top-8">
+              <h2 className="text-xl font-semibold mb-4">Booking Summary</h2>
+              
+              {bookingData.selectedSeat ? (
+                <div>
+                  <div className="mb-4">
+                    <h3 className="font-medium mb-2">Selected Seat</h3>
+                    <div className="bg-gray-50 p-3 rounded">
+                      <div className="font-medium">{bookingData.selectedSeat.seatId}</div>
+                      <div className="text-gray-600">${bookingData.selectedSeat.price}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <div className="flex justify-between mb-2">
+                      <span>Seat Price:</span>
+                      <span>${bookingData.selectedSeat.price}</span>
+                    </div>
+                    <div className="flex justify-between mb-2">
+                      <span>Taxes & Fees:</span>
+                      <span>$45.00</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t">
+                      <span>Total:</span>
+                      <span>${(parseFloat(bookingData.selectedSeat.price) + 45).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={handleConfirmBooking}
+                    disabled={processing || !selectedSeatId}
+                    className="btn-primary w-full mt-6"
+                  >
+                    {processing ? (
+                      <span className="flex items-center justify-center">
+                        <span className="loading-spinner mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                        Processing...
+                      </span>
+                    ) : (
+                      'Confirm Booking'
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Select a seat to view booking details</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-        
-        <div className="selection-summary">
-          <h2>Selected Seats</h2>
-          <div className="selected-seats">
-            {selectedSeats.length > 0 ? (
-              selectedSeats.map(seatId => (
-                <span key={seatId} className="selected-seat">{seatId}</span>
-              ))
-            ) : (
-              <p>No seats selected</p>
-            )}
-          </div>
-          <button 
-            className="btn btn-primary"
-            onClick={handleConfirmBooking}
-            disabled={selectedSeats.length === 0}
-          >
-            Confirm Booking
-          </button>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default SeatSelection
+export default SeatSelection;

@@ -1,158 +1,127 @@
-import React, { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import axios from 'axios'
-import './FlightResults.css'
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useFlights } from '../contexts/FlightContext';
 
 const FlightResults = () => {
-  const location = useLocation()
-  const navigate = useNavigate()
-  
-  const [flights, setFlights] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  
-  const searchData = location.state || {}
-  
+  const navigate = useNavigate();
+  const { flights, loading, error, getAllFlights } = useFlights();
+
   useEffect(() => {
-    const fetchFlights = async () => {
-      try {
-        setLoading(true)
-        // In a real application, we would call the flight service API here
-        // For now, we'll use mock data
-        const mockFlights = [
-          {
-            id: 1,
-            airline: 'American Airlines',
-            flightNumber: 'AA101',
-            origin: 'JFK',
-            destination: 'LAX',
-            departureUtc: '2026-01-10T08:00:00',
-            arrivalUtc: '2026-01-10T11:30:00',
-            aircraftType: 'Boeing 737',
-            price: 299.99
-          },
-          {
-            id: 2,
-            airline: 'Delta Airlines',
-            flightNumber: 'DL202',
-            origin: 'JFK',
-            destination: 'LAX',
-            departureUtc: '2026-01-10T14:00:00',
-            arrivalUtc: '2026-01-10T17:30:00',
-            aircraftType: 'Airbus A320',
-            price: 349.99
-          },
-          {
-            id: 3,
-            airline: 'United Airlines',
-            flightNumber: 'UA303',
-            origin: 'JFK',
-            destination: 'LAX',
-            departureUtc: '2026-01-10T19:00:00',
-            arrivalUtc: '2026-01-10T22:30:00',
-            aircraftType: 'Boeing 787',
-            price: 429.99
-          }
-        ]
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        setFlights(mockFlights)
-        setLoading(false)
-      } catch (err) {
-        setError('Failed to fetch flights')
-        setLoading(false)
-      }
+    // Load all flights if none are available
+    if (flights.length === 0) {
+      getAllFlights();
     }
-    
-    if (searchData.from && searchData.to && searchData.date) {
-      fetchFlights()
-    } else {
-      navigate('/search')
-    }
-  }, [searchData, navigate])
-  
+  }, [flights.length, getAllFlights]);
+
   const handleSelectFlight = (flightId) => {
-    navigate(`/seats/${flightId}`)
-  }
-  
+    navigate(`/seats/${flightId}`);
+  };
+
   if (loading) {
     return (
-      <div className="flight-results">
-        <div className="container">
-          <h1>Searching Flights...</h1>
-          <div className="loading">Loading flights...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading-spinner w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full mb-4"></div>
+          <p>Loading flights...</p>
         </div>
       </div>
-    )
+    );
   }
-  
+
   if (error) {
     return (
-      <div className="flight-results">
-        <div className="container">
-          <h1>Flight Search</h1>
-          <div className="error">{error}</div>
+      <div className="min-h-screen py-8">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="alert-error">
+              <p>{error}</p>
+              <button 
+                onClick={getAllFlights}
+                className="btn-primary mt-4"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    )
+    );
   }
-  
+
   return (
-    <div className="flight-results">
-      <div className="container">
-        <h1>Flight Results</h1>
-        <div className="search-summary">
-          <p>{searchData.from} → {searchData.to} | {searchData.date} | {searchData.adults} Adult(s)</p>
-        </div>
+    <div className="min-h-screen py-8">
+      <div className="container mx-auto px-4">
+        <h1 className="text-3xl font-bold mb-8">Available Flights</h1>
         
-        <div className="flights-list">
-          {flights.length === 0 ? (
-            <div className="no-results">
-              <p>No flights found for your search criteria.</p>
-            </div>
-          ) : (
-            flights.map(flight => (
-              <div key={flight.id} className="flight-card">
-                <div className="flight-info">
-                  <div className="airline-info">
-                    <h3>{flight.airline}</h3>
-                    <p>{flight.flightNumber}</p>
-                  </div>
-                  <div className="route-info">
-                    <div className="departure">
-                      <p className="time">{new Date(flight.departureUtc).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                      <p className="airport">{flight.origin}</p>
+        {flights.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-xl text-gray-600 mb-6">No flights found for your search criteria.</p>
+            <button 
+              onClick={() => navigate('/search')}
+              className="btn-primary"
+            >
+              Search Again
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            {flights.map((flight) => (
+              <div key={flight.id} className="card p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center mb-4">
+                      <div className="text-2xl font-bold mr-4">{flight.airline}</div>
+                      <div className="text-gray-600">{flight.flightNumber}</div>
                     </div>
-                    <div className="duration">
-                      <p>—</p>
+                    
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">{flight.departureTime}</div>
+                        <div className="text-gray-600">{flight.from}</div>
+                      </div>
+                      
+                      <div className="flex-1 mx-4 relative">
+                        <div className="border-t border-gray-300 my-2"></div>
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-gray-600">
+                          {flight.duration}
+                        </div>
+                      </div>
+                      
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">{flight.arrivalTime}</div>
+                        <div className="text-gray-600">{flight.to}</div>
+                      </div>
                     </div>
-                    <div className="arrival">
-                      <p className="time">{new Date(flight.arrivalUtc).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                      <p className="airport">{flight.destination}</p>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <span className="bg-gray-100 text-gray-800 text-sm px-2 py-1 rounded">
+                        {flight.aircraftType}
+                      </span>
+                      <span className="bg-gray-100 text-gray-800 text-sm px-2 py-1 rounded">
+                        {flight.class}
+                      </span>
                     </div>
                   </div>
-                  <div className="aircraft-info">
-                    <p>{flight.aircraftType}</p>
+                  
+                  <div className="mt-4 md:mt-0 md:ml-6 md:text-right">
+                    <div className="text-2xl font-bold text-primary-600 mb-2">
+                      ${flight.price}
+                    </div>
+                    <button
+                      onClick={() => handleSelectFlight(flight.id)}
+                      className="btn-primary"
+                    >
+                      Select Flight
+                    </button>
                   </div>
-                </div>
-                <div className="flight-price">
-                  <p className="price">{searchData.currency} {flight.price.toFixed(2)}</p>
-                  <button 
-                    className="btn btn-primary"
-                    onClick={() => handleSelectFlight(flight.id)}
-                  >
-                    Select
-                  </button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default FlightResults
+export default FlightResults;

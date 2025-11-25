@@ -1,236 +1,336 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
-import './AdminDashboard.css'
+import React, { useState, useEffect } from 'react';
+import flightService from '../services/flightService';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate()
+  const [flights, setFlights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
   
-  const [flights, setFlights] = useState([])
-  const [airports, setAirports] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  
-  const [activeTab, setActiveTab] = useState('flights')
-  
+  const [flightData, setFlightData] = useState({
+    airline: '',
+    flightNumber: '',
+    from: '',
+    to: '',
+    departureTime: '',
+    arrivalTime: '',
+    duration: '',
+    aircraftType: '',
+    price: '',
+    class: 'ECONOMY'
+  });
+
   useEffect(() => {
-    // Check if user is admin (in a real app, this would come from authentication)
-    const token = localStorage.getItem('token')
-    if (!token) {
-      navigate('/login')
-      return
-    }
-    
-    // Fetch data
-    fetchData()
-  }, [navigate])
-  
-  const fetchData = async () => {
+    fetchFlights();
+  }, []);
+
+  const fetchFlights = async () => {
     try {
-      setLoading(true)
-      
-      // In a real application, we would call the flight service API here
-      // For now, we'll use mock data
-      const mockFlights = [
-        {
-          id: 1,
-          airline: 'American Airlines',
-          flightNumber: 'AA101',
-          origin: 'JFK',
-          destination: 'LAX',
-          departureUtc: '2026-01-10T08:00:00',
-          arrivalUtc: '2026-01-10T11:30:00',
-          aircraftType: 'Boeing 737'
-        },
-        {
-          id: 2,
-          airline: 'British Airways',
-          flightNumber: 'BA202',
-          origin: 'LHR',
-          destination: 'CDG',
-          departureUtc: '2026-01-10T14:00:00',
-          arrivalUtc: '2026-01-10T15:30:00',
-          aircraftType: 'Airbus A320'
-        }
-      ]
-      
-      const mockAirports = [
-        { id: 1, iata: 'JFK', icao: 'KJFK', name: 'John F Kennedy International Airport', city: 'New York', country: 'USA' },
-        { id: 2, iata: 'LAX', icao: 'KLAX', name: 'Los Angeles International Airport', city: 'Los Angeles', country: 'USA' },
-        { id: 3, iata: 'LHR', icao: 'EGLL', name: 'London Heathrow Airport', city: 'London', country: 'UK' },
-        { id: 4, iata: 'CDG', icao: 'LFPG', name: 'Charles de Gaulle Airport', city: 'Paris', country: 'France' }
-      ]
-      
-      setFlights(mockFlights)
-      setAirports(mockAirports)
-      setLoading(false)
+      const response = await flightService.getAllFlights();
+      setFlights(response.data);
+      setLoading(false);
     } catch (err) {
-      setError('Failed to fetch data')
-      setLoading(false)
+      setError(err.message || 'Failed to fetch flights');
+      setLoading(false);
     }
-  }
-  
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    navigate('/login')
-  }
-  
+  };
+
+  const handleInputChange = (e) => {
+    setFlightData({
+      ...flightData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const response = await flightService.createFlight(flightData);
+      setFlights([...flights, response.data]);
+      setFlightData({
+        airline: '',
+        flightNumber: '',
+        from: '',
+        to: '',
+        departureTime: '',
+        arrivalTime: '',
+        duration: '',
+        aircraftType: '',
+        price: '',
+        class: 'ECONOMY'
+      });
+      setShowAddForm(false);
+    } catch (err) {
+      setError(err.message || 'Failed to create flight');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this flight?')) {
+      try {
+        await flightService.deleteFlight(id);
+        setFlights(flights.filter(flight => flight.id !== id));
+      } catch (err) {
+        setError(err.message || 'Failed to delete flight');
+      }
+    }
+  };
+
   if (loading) {
     return (
-      <div className="admin-dashboard">
-        <div className="container">
-          <h1>Admin Dashboard</h1>
-          <div className="loading">Loading dashboard...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading-spinner w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full mb-4"></div>
+          <p>Loading dashboard...</p>
         </div>
       </div>
-    )
+    );
   }
-  
+
   if (error) {
     return (
-      <div className="admin-dashboard">
-        <div className="container">
-          <h1>Admin Dashboard</h1>
-          <div className="error">{error}</div>
+      <div className="min-h-screen py-8">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="alert-error">
+              <p>{error}</p>
+              <button 
+                onClick={fetchFlights}
+                className="btn-primary mt-4"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    )
+    );
   }
-  
+
   return (
-    <div className="admin-dashboard">
-      <div className="container">
-        <div className="admin-header">
-          <h1>Admin Dashboard</h1>
-          <button className="btn btn-secondary" onClick={handleLogout}>Logout</button>
-        </div>
-        
-        <div className="admin-tabs">
-          <button 
-            className={`tab ${activeTab === 'flights' ? 'active' : ''}`}
-            onClick={() => setActiveTab('flights')}
+    <div className="min-h-screen py-8">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="btn-primary"
           >
-            Flights
-          </button>
-          <button 
-            className={`tab ${activeTab === 'airports' ? 'active' : ''}`}
-            onClick={() => setActiveTab('airports')}
-          >
-            Airports
-          </button>
-          <button 
-            className={`tab ${activeTab === 'bookings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('bookings')}
-          >
-            Bookings
+            {showAddForm ? 'Cancel' : 'Add New Flight'}
           </button>
         </div>
         
-        <div className="admin-content">
-          {activeTab === 'flights' && (
-            <div className="flights-management">
-              <div className="section-header">
-                <h2>Flight Management</h2>
-                <button className="btn btn-primary">Add New Flight</button>
+        {showAddForm && (
+          <div className="card p-6 mb-8">
+            <h2 className="text-xl font-semibold mb-4">Add New Flight</h2>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Airline</label>
+                <input
+                  type="text"
+                  name="airline"
+                  value={flightData.airline}
+                  onChange={handleInputChange}
+                  className="form-input w-full"
+                  required
+                />
               </div>
               
-              <table className="data-table">
-                <thead>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Flight Number</label>
+                <input
+                  type="text"
+                  name="flightNumber"
+                  value={flightData.flightNumber}
+                  onChange={handleInputChange}
+                  className="form-input w-full"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
+                <input
+                  type="text"
+                  name="from"
+                  value={flightData.from}
+                  onChange={handleInputChange}
+                  className="form-input w-full"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+                <input
+                  type="text"
+                  name="to"
+                  value={flightData.to}
+                  onChange={handleInputChange}
+                  className="form-input w-full"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
+                <input
+                  type="time"
+                  name="departureTime"
+                  value={flightData.departureTime}
+                  onChange={handleInputChange}
+                  className="form-input w-full"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Arrival Time</label>
+                <input
+                  type="time"
+                  name="arrivalTime"
+                  value={flightData.arrivalTime}
+                  onChange={handleInputChange}
+                  className="form-input w-full"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                <input
+                  type="text"
+                  name="duration"
+                  value={flightData.duration}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 7h 15m"
+                  className="form-input w-full"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Aircraft Type</label>
+                <input
+                  type="text"
+                  name="aircraftType"
+                  value={flightData.aircraftType}
+                  onChange={handleInputChange}
+                  className="form-input w-full"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={flightData.price}
+                  onChange={handleInputChange}
+                  step="0.01"
+                  className="form-input w-full"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
+                <select
+                  name="class"
+                  value={flightData.class}
+                  onChange={handleInputChange}
+                  className="form-input w-full"
+                >
+                  <option value="ECONOMY">Economy</option>
+                  <option value="BUSINESS">Business</option>
+                  <option value="FIRST">First</option>
+                </select>
+              </div>
+              
+              <div className="md:col-span-2 flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="btn-outline"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                >
+                  Add Flight
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+        
+        <div className="card p-6">
+          <h2 className="text-xl font-semibold mb-4">Flight Management</h2>
+          
+          {flights.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No flights found. Add a new flight to get started.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
                   <tr>
-                    <th>Airline</th>
-                    <th>Flight Number</th>
-                    <th>Origin</th>
-                    <th>Destination</th>
-                    <th>Departure</th>
-                    <th>Arrival</th>
-                    <th>Aircraft</th>
-                    <th>Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Flight</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aircraft</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {flights.map(flight => (
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {flights.map((flight) => (
                     <tr key={flight.id}>
-                      <td>{flight.airline}</td>
-                      <td>{flight.flightNumber}</td>
-                      <td>{flight.origin}</td>
-                      <td>{flight.destination}</td>
-                      <td>{new Date(flight.departureUtc).toLocaleString()}</td>
-                      <td>{new Date(flight.arrivalUtc).toLocaleString()}</td>
-                      <td>{flight.aircraftType}</td>
-                      <td>
-                        <button className="btn btn-small btn-secondary">Edit</button>
-                        <button className="btn btn-small btn-danger">Delete</button>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{flight.airline}</div>
+                        <div className="text-sm text-gray-500">{flight.flightNumber}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{flight.from}</div>
+                        <div className="text-sm text-gray-500">{flight.to}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{flight.departureTime}</div>
+                        <div className="text-sm text-gray-500">{flight.arrivalTime}</div>
+                        <div className="text-sm text-gray-500">({flight.duration})</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {flight.aircraftType}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ${flight.price}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button className="text-primary-600 hover:text-primary-900 mr-3">
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(flight.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-          
-          {activeTab === 'airports' && (
-            <div className="airports-management">
-              <div className="section-header">
-                <h2>Airport Management</h2>
-                <button className="btn btn-primary">Add New Airport</button>
-              </div>
-              
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>IATA</th>
-                    <th>ICAO</th>
-                    <th>Name</th>
-                    <th>City</th>
-                    <th>Country</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {airports.map(airport => (
-                    <tr key={airport.id}>
-                      <td>{airport.iata}</td>
-                      <td>{airport.icao}</td>
-                      <td>{airport.name}</td>
-                      <td>{airport.city}</td>
-                      <td>{airport.country}</td>
-                      <td>
-                        <button className="btn btn-small btn-secondary">Edit</button>
-                        <button className="btn btn-small btn-danger">Delete</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          
-          {activeTab === 'bookings' && (
-            <div className="bookings-management">
-              <div className="section-header">
-                <h2>Booking Management</h2>
-              </div>
-              
-              <div className="bookings-stats">
-                <div className="stat-card">
-                  <h3>Total Bookings</h3>
-                  <p>1,245</p>
-                </div>
-                <div className="stat-card">
-                  <h3>Revenue</h3>
-                  <p>$245,680</p>
-                </div>
-                <div className="stat-card">
-                  <h3>Avg. Booking Value</h3>
-                  <p>$197.33</p>
-                </div>
-              </div>
             </div>
           )}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AdminDashboard
+export default AdminDashboard;

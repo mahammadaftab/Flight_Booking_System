@@ -1,38 +1,50 @@
-import React from 'react'
-import { Routes, Route } from 'react-router-dom'
-import Header from './components/Header'
-import Footer from './components/Footer'
-import Home from './pages/Home'
-import SearchFlights from './pages/SearchFlights'
-import FlightResults from './pages/FlightResults'
-import SeatSelection from './pages/SeatSelection'
-import BookingConfirmation from './pages/BookingConfirmation'
-import Payment from './pages/Payment'
-import AdminDashboard from './pages/AdminDashboard'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Header from './components/Header.jsx';
+import Footer from './components/Footer.jsx';
+import Home from './pages/Home.jsx';
+import SearchFlights from './pages/SearchFlights.jsx';
+import FlightResults from './pages/FlightResults.jsx';
+import SeatSelection from './pages/SeatSelection.jsx';
+import BookingConfirmation from './pages/BookingConfirmation.jsx';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+import Payment from './pages/Payment.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import { AuthProvider } from './contexts/AuthContext.jsx';
+import { FlightProvider } from './contexts/FlightContext.jsx';
+import { BookingProvider } from './contexts/BookingContext.jsx';
 
 function App() {
+  const [loading, setLoading] = useState(false);
+
   return (
-    <div className="App">
-      <Header />
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/search" element={<SearchFlights />} />
-          <Route path="/results" element={<FlightResults />} />
-          <Route path="/seats/:flightId" element={<SeatSelection />} />
-          <Route path="/confirmation" element={<BookingConfirmation />} />
-          <Route path="/payment" element={<Payment />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
-  )
+    <AuthProvider>
+      <FlightProvider>
+        <BookingProvider>
+          <Router>
+            <div className="min-h-screen flex flex-col bg-gray-50">
+              <Header />
+              <main className="flex-grow">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/search" element={<SearchFlights />} />
+                  <Route path="/results" element={<FlightResults />} />
+                  <Route path="/seats/:flightId" element={<SeatSelection />} />
+                  <Route path="/booking/confirmation" element={<BookingConfirmation />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/payment" element={<Payment />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          </Router>
+        </BookingProvider>
+      </FlightProvider>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
