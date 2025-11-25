@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import Home from './pages/Home.jsx';
@@ -22,25 +22,23 @@ function App() {
     <AuthProvider>
       <FlightProvider>
         <BookingProvider>
-          <Router>
-            <div className="min-h-screen flex flex-col bg-gray-50">
-              <Header />
-              <main className="flex-grow">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/search" element={<SearchFlights />} />
-                  <Route path="/results" element={<FlightResults />} />
-                  <Route path="/seats/:flightId" element={<SeatSelection />} />
-                  <Route path="/booking/confirmation" element={<BookingConfirmation />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/payment" element={<Payment />} />
-                  <Route path="/admin" element={<AdminDashboard />} />
-                </Routes>
-              </main>
-              <Footer />
-            </div>
-          </Router>
+          <div className="min-h-screen flex flex-col bg-gray-50">
+            <Header />
+            <main className="flex-grow">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/search" element={<SearchFlights />} />
+                <Route path="/results" element={<FlightResults />} />
+                <Route path="/seats/:flightId" element={<SeatSelection />} />
+                <Route path="/booking/confirmation" element={<BookingConfirmation />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/payment" element={<Payment />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
         </BookingProvider>
       </FlightProvider>
     </AuthProvider>
