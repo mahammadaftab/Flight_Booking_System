@@ -68,7 +68,7 @@ spring:
                 key-resolver: "#{@userKeyResolver}"
 
 app:
-  jwtSecret: ======================FlightBookingSecretKey===========================
+  jwtSecret: e72XfvvmwkQ07AmIDzECKYspWOTU4ZNGlhG1jnaWr8jlYlN/UdixA6ScE//m+5ErcWNDgh7Oyu4hcFe9fupy2g==
   jwtExpirationMs: 86400000
 
 eureka:

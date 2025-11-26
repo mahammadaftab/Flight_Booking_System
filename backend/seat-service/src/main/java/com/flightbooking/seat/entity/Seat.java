@@ -24,9 +24,11 @@ public class Seat {
     private String className;
 
     @NotBlank
+    @Column(name = "seat_row")
     private String row;
 
     @NotBlank
+    @Column(name = "seat_column")
     private String column;
 
     @Enumerated(EnumType.STRING)

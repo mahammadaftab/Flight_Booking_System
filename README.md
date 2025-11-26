@@ -199,6 +199,12 @@ Note: Currently, only the frontend, PostgreSQL, and Redis services are successfu
 
 1. Start other services in separate terminals:
 ```bash
+cd backend/eureka-server
+mvn spring-boot:run
+
+cd backend/api-gateway
+mvn spring-boot:run
+
 cd backend/auth-service
 mvn spring-boot:run
 
@@ -217,11 +223,6 @@ mvn spring-boot:run
 cd backend/currency-service
 mvn spring-boot:run
 
-cd backend/api-gateway
-mvn spring-boot:run
-
-cd backend/eureka-server
-mvn spring-boot:run
 ```
 
 2. Start the frontend:

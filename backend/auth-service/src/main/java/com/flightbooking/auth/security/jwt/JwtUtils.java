@@ -36,17 +36,28 @@ public class JwtUtils {
     }
 
     private SecretKey key() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-        return Keys.hmacShaKeyFor(keyBytes);
+        // If the jwtSecret is a proper base64 encoded string of sufficient length, use it
+        // Otherwise, generate a new secure key
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+            if (keyBytes.length >= 64) { // 512 bits = 64 bytes
+                return Keys.hmacShaKeyFor(keyBytes);
+            }
+        } catch (Exception e) {
+            logger.warn("Invalid or insufficient JWT secret, generating a new one");
+        }
+        
+        // Generate a new secure key for HS512
+        return Keys.secretKeyFor(SignatureAlgorithm.HS512);
     }
 
     public String getUserNameFromJwtToken(String token) {
-        return Jwts.parser().setSigningKey(key()).parseClaimsJws(token).getBody().getSubject();
+        return Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(token).getBody().getSubject();
     }
 
     public boolean validateJwtToken(String authToken) {
         try {
-            Jwts.parser().setSigningKey(key()).parseClaimsJws(authToken);
+            Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(authToken);
             return true;
         } catch (MalformedJwtException e) {
             logger.error("Invalid JWT token: {}", e.getMessage());
