@@ -8,7 +8,6 @@ Before deploying the application, ensure you have the following installed:
 
 - Java 17 or higher
 - Maven 3.8 or higher
-- Docker and Docker Compose
 - Node.js 16 or higher
 - npm 8 or higher
 - Git
@@ -28,7 +27,7 @@ The Flight Booking System consists of the following microservices:
 
 ## Deployment Options
 
-### Option 1: Docker Compose Deployment (Recommended)
+### Option 1: Script-Based Deployment (Recommended)
 
 1. **Clone the repository:**
    ```bash
@@ -36,14 +35,22 @@ The Flight Booking System consists of the following microservices:
    cd Flight_Booking_System
    ```
 
-2. **Build the services:**
+2. **Start all backend services:**
+   On Windows:
    ```bash
-   mvn clean package -DskipTests
+   run-backend-services.bat
+   ```
+   
+   On Unix/Linux/MacOS:
+   ```bash
+   # You can create a similar shell script or start services individually
    ```
 
-3. **Build and start all services:**
+3. **Start the React frontend:**
    ```bash
-   docker-compose up --build
+   cd frontend
+   npm install
+   npm run dev
    ```
 
 4. **Access the application:**
@@ -96,7 +103,7 @@ The Flight Booking System consists of the following microservices:
    ```bash
    cd frontend
    npm install
-   npm start
+   npm run dev
    ```
 
 ## Environment Configuration
@@ -134,14 +141,11 @@ Default ports:
 
 ### Prometheus and Grafana
 
-1. Start monitoring services:
-   ```bash
-   docker-compose -f monitoring/docker-compose.monitoring.yml up
-   ```
+For monitoring, you can set up Prometheus and Grafana separately:
 
-2. Access the tools:
-   - Prometheus: http://localhost:9090
-   - Grafana: http://localhost:3001
+1. Install Prometheus and Grafana on your system
+2. Configure Prometheus to scrape metrics from the services
+3. Import the provided Grafana dashboards
 
 ### Health Checks
 
@@ -161,7 +165,6 @@ The application uses Eureka for service discovery and client-side load balancing
 
 1. Start multiple instances of any service
 2. Eureka will automatically register and load balance between instances
-3. Use Docker Compose with replicas for easy scaling
 
 ## Backup and Recovery
 

@@ -7,7 +7,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,8 +35,10 @@ public class FlightController {
     public List<FlightDTO> searchFlights(
             @RequestParam String from,
             @RequestParam String to,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime date) {
-        return flightService.searchFlights(from, to, date);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        // Convert LocalDate to LocalDateTime (start of day)
+        LocalDateTime dateTime = date.atStartOfDay();
+        return flightService.searchFlights(from, to, dateTime);
     }
 
     @PostMapping

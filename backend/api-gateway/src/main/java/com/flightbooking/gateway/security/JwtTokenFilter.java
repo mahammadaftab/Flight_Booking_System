@@ -22,23 +22,39 @@ public class JwtTokenFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        try {
-            String jwt = parseJwt(exchange);
-            if (jwt != null && jwtTokenProvider.validateJwtToken(jwt)) {
-                String username = jwtTokenProvider.getUserNameFromJwtToken(jwt);
-
-                UsernamePasswordAuthenticationToken authentication = 
-                    new UsernamePasswordAuthenticationToken(username, null, null);
-
-                return chain.filter(exchange)
-                    .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(
-                        Mono.just(new SecurityContextImpl(authentication))));
-            }
-        } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", e);
+        String path = exchange.getRequest().getURI().getPath();
+        
+        // Skip JWT filter for public endpoints
+        if (path.startsWith("/api/auth/") || path.startsWith("/api/flights/search") || path.startsWith("/api/flights")) {
+            return chain.filter(exchange);
         }
+        
+        String jwt = parseJwt(exchange);
+        
+        // If no JWT token, continue without authentication
+        if (jwt == null) {
+            return chain.filter(exchange);
+        }
+        
+        try {
+            // If JWT token is invalid, continue without authentication
+            if (!jwtTokenProvider.validateJwtToken(jwt)) {
+                return chain.filter(exchange);
+            }
+            
+            // If JWT token is valid, set authentication
+            String username = jwtTokenProvider.getUserNameFromJwtToken(jwt);
+            UsernamePasswordAuthenticationToken authentication = 
+                new UsernamePasswordAuthenticationToken(username, null, null);
 
-        return chain.filter(exchange);
+            return chain.filter(exchange)
+                .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(
+                    Mono.just(new SecurityContextImpl(authentication))));
+        } catch (Exception e) {
+            logger.error("Cannot set user authentication: {}", e.getMessage());
+            // Continue without authentication on error
+            return chain.filter(exchange);
+        }
     }
 
     private String parseJwt(ServerWebExchange exchange) {

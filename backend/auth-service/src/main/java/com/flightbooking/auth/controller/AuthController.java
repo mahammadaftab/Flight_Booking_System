@@ -1,13 +1,14 @@
 package com.flightbooking.auth.controller;
 
-import com.flightbooking.auth.entity.User;
+import com.flightbooking.auth.entity.UserMongo;
 import com.flightbooking.auth.payload.request.LoginRequest;
 import com.flightbooking.auth.payload.request.SignupRequest;
 import com.flightbooking.auth.payload.response.JwtResponse;
 import com.flightbooking.auth.payload.response.MessageResponse;
-import com.flightbooking.auth.repository.UserRepository;
+import com.flightbooking.auth.repository.UserMongoRepository;
 import com.flightbooking.auth.security.jwt.JwtUtils;
 import com.flightbooking.auth.security.services.UserDetailsImpl;
+import com.flightbooking.auth.service.UserMongoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,10 @@ public class AuthController {
     AuthenticationManager authenticationManager;
 
     @Autowired
-    UserRepository userRepository;
+    UserMongoRepository userRepository;
+
+    @Autowired
+    UserMongoService userMongoService;
 
     @Autowired
     PasswordEncoder encoder;
@@ -60,7 +64,7 @@ public class AuthController {
         }
 
         // Create new user's account
-        User user = new User(signUpRequest.getEmail(),
+        UserMongo user = new UserMongo(signUpRequest.getEmail(),
                 encoder.encode(signUpRequest.getPassword()),
                 signUpRequest.getRole().toUpperCase());
 

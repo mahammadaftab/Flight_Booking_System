@@ -85,8 +85,6 @@ The system follows a microservices architecture with the following components:
 - **React Testing Library** for component testing
 
 ### Infrastructure
-- **Docker** for containerization
-- **Docker Compose** for orchestration
 - **GitHub Actions** for CI/CD
 - **Prometheus & Grafana** for monitoring
 - **Eureka** for service discovery
@@ -136,15 +134,15 @@ The Flight Booking System consists of the following microservices:
    - Service discovery
    - Health monitoring
 
-### Currently Running Services
+### Services Overview
 
-When starting the system with Docker Compose, the following services are currently operational:
+When starting the system using the provided scripts or manual commands, all services should start successfully:
 
-1. **Frontend** - React application serving the user interface on port 80
-2. **PostgreSQL** - Database service on port 5432
-3. **Redis** - Caching and seat locking service on port 6379
+1. **Frontend** - React application serving the user interface on port 3000
+2. **PostgreSQL** - Database service on port 5432 (when running with Docker)
+3. **Redis** - Caching and seat locking service on port 6379 (when running with Docker)
 
-Note: Some backend services may fail to start due to configuration issues. Please check the Docker logs for more information.
+Note: For local development, services use in-memory H2 databases by default, so PostgreSQL is not required. Redis is only needed for seat locking functionality.
 
 ## Project Structure
 
@@ -163,9 +161,7 @@ Flight_Booking_System/
 ├── frontend/                  # React frontend application
 ├── monitoring/                # Monitoring configuration
 │   ├── grafana/               # Grafana dashboards
-│   ├── prometheus/            # Prometheus configuration
-│   └── docker-compose.monitoring.yml
-├── docker-compose.yml         # Main Docker Compose configuration
+│   └── prometheus/            # Prometheus configuration
 ├── DEPLOYMENT.md              # Deployment guide
 └── README.md                  # This file
 ```
@@ -176,28 +172,27 @@ Flight_Booking_System/
 - Java 17+
 - Maven 3.6+
 - Node.js 16+
-- Docker and Docker Compose
 - Git
 
-### Running with Docker Compose
+### Running the Application (Recommended Approach)
 
 ```bash
 # Clone the repository
 git clone <repository-url>
 cd Flight_Booking_System
 
-# Build and start all services
-docker-compose up --build
+# On Windows, run the batch script to start all backend services:
+run-backend-services.bat
 
-# For development with hot reloading
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Or use the PowerShell script:
+run-backend-services.ps1
+
+# On Unix/Linux/MacOS, you can start services individually (see below)
 ```
-
-Note: Currently, only the frontend, PostgreSQL, and Redis services are successfully starting. The other backend services may fail to start due to configuration issues.
 
 ### Running Individual Services
 
-1. Start other services in separate terminals:
+1. Start services in separate terminals:
 ```bash
 cd backend/eureka-server
 mvn spring-boot:run
@@ -222,8 +217,11 @@ mvn spring-boot:run
 
 cd backend/currency-service
 mvn spring-boot:run
-
 ```
+
+Alternatively, you can use the provided scripts:
+- On Windows: `run-backend-services.bat` or `run-backend-services.ps1`
+- On Unix/Linux/MacOS: Create a similar shell script based on the provided Windows scripts
 
 2. Start the frontend:
 ```bash
@@ -261,7 +259,7 @@ API documentation is available through Swagger UI when running the services:
 API documentation is also available through the API Gateway:
 - All APIs: http://localhost:8080/swagger-ui.html
 
-Note: These services need to be running for the API documentation to be accessible. Currently, the backend services may not be starting successfully.
+Note: These services need to be running for the API documentation to be accessible. With the new setup, all services should start successfully.
 
 ## Testing
 

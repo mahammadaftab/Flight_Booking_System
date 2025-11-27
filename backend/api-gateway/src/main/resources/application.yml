@@ -6,9 +6,6 @@ spring:
     name: api-gateway
   main:
     web-application-type: reactive
-  redis:
-    host: localhost
-    port: 6379
   cloud:
     gateway:
       routes:
@@ -20,52 +17,22 @@ spring:
           uri: lb://flight-service
           predicates:
             - Path=/api/flights/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-                key-resolver: "#{@userKeyResolver}"
         - id: seat-service
           uri: lb://seat-service
           predicates:
             - Path=/api/seats/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-                key-resolver: "#{@userKeyResolver}"
         - id: booking-service
           uri: lb://booking-service
           predicates:
             - Path=/api/bookings/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-                key-resolver: "#{@userKeyResolver}"
         - id: payment-service
           uri: lb://payment-service
           predicates:
             - Path=/api/payments/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 5
-                redis-rate-limiter.burstCapacity: 10
-                key-resolver: "#{@userKeyResolver}"
         - id: currency-service
           uri: lb://currency-service
           predicates:
             - Path=/api/rates/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 20
-                redis-rate-limiter.burstCapacity: 40
-                key-resolver: "#{@userKeyResolver}"
 
 app:
   jwtSecret: e72XfvvmwkQ07AmIDzECKYspWOTU4ZNGlhG1jnaWr8jlYlN/UdixA6ScE//m+5ErcWNDgh7Oyu4hcFe9fupy2g==
@@ -75,3 +42,8 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
