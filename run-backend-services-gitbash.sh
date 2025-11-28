@@ -26,23 +26,23 @@ cd backend/auth-service && mvn spring-boot:run &
 
 # Start Flight Service
 echo "Starting Flight Service..."
-cd ../../flight-service && mvn spring-boot:run &
+cd ../flight-service && mvn spring-boot:run &
 
 # Start Seat Service
 echo "Starting Seat Service..."
-cd ../../seat-service && mvn spring-boot:run &
+cd ../seat-service && mvn spring-boot:run &
 
 # Start Booking Service
 echo "Starting Booking Service..."
-cd ../../booking-service && mvn spring-boot:run &
+cd ../booking-service && mvn spring-boot:run &
 
 # Start Payment Service
 echo "Starting Payment Service..."
-cd ../../payment-service && mvn spring-boot:run &
+cd ../payment-service && mvn spring-boot:run &
 
 # Start Currency Service
 echo "Starting Currency Service..."
-cd ../../currency-service && mvn spring-boot:run &
+cd ../currency-service && mvn spring-boot:run &
 
 cd ../../..
 

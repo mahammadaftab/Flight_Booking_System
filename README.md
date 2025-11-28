@@ -15,6 +15,7 @@ A real-time, secure, worldwide Flight Booking Web Application built with Java Sp
 - [Services](#services)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
+- [Database Update](#database-update)
 - [Deployment](#deployment)
 - [API Documentation](#api-documentation)
 - [Testing](#testing)
@@ -233,6 +234,51 @@ npm run dev
 ### Environment Variables
 
 Each service can be configured with environment variables. See individual `application.yml` files for available options.
+
+## Database Update
+
+The Flight Booking System now includes an expanded database with comprehensive world flights data:
+
+### Features
+- 30+ major airports from all continents
+- 70+ flights covering major international routes
+- Organized by geographic regions (North America, South America, Europe, Asia, Africa, Oceania)
+- Sample seat data for select flights
+- Updated exchange rates for major world currencies
+
+### How to Update
+1. Start the backend services:
+   ```bash
+   ./start-services.sh
+   ```
+
+2. Access the H2 database console:
+   - Open your browser and go to: http://localhost:8082/h2-console
+   - JDBC URL: jdbc:h2:mem:testdb
+   - User Name: sa
+   - Password: password
+
+3. Copy the contents of `backend/database/world_flights.sql` and paste it into the H2 console SQL editor
+
+4. Execute the script
+
+### Verification
+After updating the database, you can verify the new data by running queries such as:
+```sql
+-- Check the number of airports
+SELECT COUNT(*) FROM airports;
+
+-- Check the number of flights
+SELECT COUNT(*) FROM flights;
+
+-- View some sample flights
+SELECT * FROM flights LIMIT 10;
+
+-- Check flights from a specific airport
+SELECT * FROM flights WHERE origin = 'JFK';
+```
+
+See `backend/database/README.md` for more detailed information about the database update.
 
 ## Deployment
 

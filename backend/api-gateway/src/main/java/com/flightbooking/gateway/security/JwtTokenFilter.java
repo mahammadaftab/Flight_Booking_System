@@ -25,7 +25,7 @@ public class JwtTokenFilter implements WebFilter {
         String path = exchange.getRequest().getURI().getPath();
         
         // Skip JWT filter for public endpoints
-        if (path.startsWith("/api/auth/") || path.startsWith("/api/flights/search") || path.startsWith("/api/flights")) {
+        if (isPublicEndpoint(path)) {
             return chain.filter(exchange);
         }
         
@@ -55,6 +55,13 @@ public class JwtTokenFilter implements WebFilter {
             // Continue without authentication on error
             return chain.filter(exchange);
         }
+    }
+
+    private boolean isPublicEndpoint(String path) {
+        return path.startsWith("/api/auth/") || 
+               path.startsWith("/api/flights/search") ||
+               path.equals("/api/flights") ||
+               path.startsWith("/actuator/");
     }
 
     private String parseJwt(ServerWebExchange exchange) {
